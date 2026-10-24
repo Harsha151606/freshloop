@@ -22,15 +22,49 @@ import {
   Cell,
 } from 'recharts';
 import { Card, CardHeader, CardContent, StatCard, Badge, EmptyState } from '@/components/ui';
-import { useImpactRecords, useOrganizations, useMounted } from '@/lib/hooks';
+import { useImpactRecords, useOrganizations, useMounted, useRescueRequests } from '@/lib/hooks';
+import { useAuth } from '@/lib/auth-context';
 import { categoryLabel } from '@/lib/utils';
 
 const CHART_COLORS = ['#166429', '#3d9a4f', '#6bb87a', '#a8d630', '#c0e45c', '#edf8c8', '#d4ead7'];
 
 export default function ImpactPage() {
-  const impacts = useImpactRecords();
+  const allImpacts = useImpactRecords();
+  const rescues = useRescueRequests();
   const orgs = useOrganizations();
   const mounted = useMounted();
+  const { user, isDemo } = useAuth();
+
+  // Demo mode deliberately shows the seeded portfolio. Real accounts see only
+  // completed rescues linked to their organization or volunteer assignments.
+  const impacts = useMemo(() => {
+    if (!user) return [];
+    if (isDemo) return allImpacts;
+
+    if (user.role === 'donor') {
+      return user.organizationId
+        ? allImpacts.filter((impact) => impact.donorOrgId === user.organizationId)
+        : [];
+    }
+
+    if (user.role === 'recipient') {
+      return user.organizationId
+        ? allImpacts.filter((impact) => impact.recipientOrgId === user.organizationId)
+        : [];
+    }
+
+    if (user.role === 'volunteer') {
+      const completedRescueIds = new Set(
+        rescues
+          .filter((rescue) => rescue.volunteerId === user.id && rescue.status === 'delivered')
+          .map((rescue) => rescue.id)
+      );
+      return allImpacts.filter((impact) => completedRescueIds.has(impact.rescueRequestId));
+    }
+
+    // Do not present seeded demo transactions as verified live impact.
+    return [];
+  }, [allImpacts, rescues, user, isDemo]);
 
   const summary = useMemo(() => {
     const totalKg = impacts.reduce((s, i) => s + i.quantityKg, 0);
@@ -97,8 +131,9 @@ export default function ImpactPage() {
       <div className="flex gap-3 p-3 bg-lime-50 border border-lime-200 rounded-[var(--radius-md)]">
         <Info className="w-4 h-4 text-forest-600 shrink-0 mt-0.5" />
         <p className="text-xs text-forest-700">
-          Demo Mode: These figures are derived from simulated demo transactions and do not represent
-          verified real-world impact. Meal and CO₂ estimates use standard conversion factors.
+          {isDemo
+            ? 'Demo Mode: These figures are derived from simulated transactions and do not represent verified real-world impact. Meal and CO₂ estimates use standard conversion factors.'
+            : 'This report is scoped to your account and counts only delivered rescues linked to your organization or volunteer assignments. In this build, operational records are stored in this browser and are not yet shared across devices or separate users.'}
         </p>
       </div>
 

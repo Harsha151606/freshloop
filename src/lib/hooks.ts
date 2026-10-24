@@ -14,6 +14,7 @@ import {
   getUsers,
 } from './store';
 import type { DemoUser, AppState } from './types';
+import { useAuth } from './auth-context';
 
 // Hook to subscribe to store changes
 function useStoreData<T>(selector: () => T): T {
@@ -25,7 +26,26 @@ function useStoreData<T>(selector: () => T): T {
 }
 
 export function useCurrentUser() {
-  const user = useStoreData(getCurrentUser);
+  const { user: authUser, isLoading: authLoading } = useAuth();
+  const storedUser = useStoreData(getCurrentUser);
+
+  // The sidebar uses Supabase Auth, while the original pages used only the
+  // demo store. Normalize both paths here so every dashboard page sees the
+  // same currently authenticated identity.
+  const user: DemoUser | null = authUser
+    ? {
+        id: authUser.id,
+        name: authUser.fullName,
+        email: authUser.email,
+        role: authUser.role,
+        organizationId: authUser.organizationId ?? '',
+        avatarInitials: authUser.avatarInitials,
+        organizationName: authUser.organizationName,
+        isDemo: authUser.isDemo,
+      }
+    : authLoading
+      ? null
+      : storedUser;
 
   const setUser = useCallback((u: DemoUser | null) => {
     storeSetCurrentUser(u);

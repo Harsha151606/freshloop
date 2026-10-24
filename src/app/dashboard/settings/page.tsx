@@ -20,11 +20,13 @@ import {
   Dialog,
 } from '@/components/ui';
 import { useCurrentUser, useMounted } from '@/lib/hooks';
+import { useAuth } from '@/lib/auth-context';
 import { getOrganization, resetDemo } from '@/lib/store';
 import { orgTypeLabel } from '@/lib/utils';
 
 export default function SettingsPage() {
   const { user } = useCurrentUser();
+  const { isDemo } = useAuth();
   const mounted = useMounted();
   const router = useRouter();
   const [resetDialog, setResetDialog] = useState(false);
@@ -46,7 +48,9 @@ export default function SettingsPage() {
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
       <div>
         <h1 className="text-2xl font-bold text-text">Settings</h1>
-        <p className="text-sm text-text-secondary mt-1">Demo configuration and controls.</p>
+        <p className="text-sm text-text-secondary mt-1">
+          {isDemo ? 'Demo configuration and controls.' : 'Your signed-in account details and available settings.'}
+        </p>
       </div>
 
       {/* User Info */}
@@ -54,7 +58,7 @@ export default function SettingsPage() {
         <CardHeader>
           <div className="flex items-center gap-2">
             <User className="w-4.5 h-4.5 text-forest-600" />
-            <h2 className="text-base font-semibold text-text">Demo User</h2>
+            <h2 className="text-base font-semibold text-text">{isDemo ? 'Demo User' : 'Account Profile'}</h2>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -130,7 +134,9 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Demo Reset */}
+      {isDemo && (
+        <>
+          {/* Demo Reset */}
       <Card className="border-red-200">
         <CardHeader>
           <div className="flex items-center gap-2">
@@ -187,6 +193,8 @@ export default function SettingsPage() {
           </div>
         )}
       </Dialog>
+        </>
+      )}
     </div>
   );
 }

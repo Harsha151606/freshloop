@@ -35,6 +35,9 @@ export interface DemoUser {
   role: UserRole;
   organizationId: string;
   avatarInitials: string;
+  /** Present for authenticated users; demo seed users omit these fields. */
+  organizationName?: string | null;
+  isDemo?: boolean;
 }
 
 export interface Organization {

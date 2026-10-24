@@ -13,6 +13,7 @@ import type {
   PickupAssignment,
   ImpactRecord,
   Organization,
+  UserRole,
 } from './types';
 import {
   seedUsers,
@@ -124,7 +125,51 @@ export function getOrganizations(): Organization[] {
 }
 
 export function getOrganization(id: string): Organization | undefined {
+  if (!id) return undefined;
   return loadState().organizations.find((o) => o.id === id);
+}
+
+/**
+ * Creates a browser-local organization profile for a newly authenticated donor
+ * or recipient when there is not yet a persisted Supabase organization record.
+ * The id is stable per account so locally created listings use the same owner.
+ *
+ * This is localStorage-backed scaffolding, not shared server-side persistence.
+ */
+export function ensureAccountOrganization(params: {
+  userId: string;
+  organizationId?: string | null;
+  organizationName?: string | null;
+  role: UserRole;
+}): string | null {
+  if (params.role !== 'donor' && params.role !== 'recipient') return null;
+
+  const organizationId = params.organizationId?.trim() || `account-org-${params.userId}`;
+  const state = loadState();
+  const existing = state.organizations.find((organization) => organization.id === organizationId);
+  if (existing) return organizationId;
+
+  const organization: Organization = {
+    id: organizationId,
+    name: params.organizationName?.trim() || 'My Organization',
+    type: params.role === 'donor' ? 'restaurant' : 'ngo',
+    address: 'Not provided',
+    area: 'Not provided',
+    city: 'Not provided',
+    contactPhone: '',
+    categories: [],
+    storageCapabilities: [],
+    maxCapacityKg: 0,
+    operatingHours: 'Not specified',
+    isVerified: false,
+  };
+
+  saveState({
+    ...state,
+    organizations: [...state.organizations, organization],
+  });
+  notify();
+  return organizationId;
 }
 
 export function getRecipientOrgs(): Organization[] {
