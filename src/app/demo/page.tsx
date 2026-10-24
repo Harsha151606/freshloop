@@ -2,11 +2,21 @@
 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Leaf, ArrowLeft, Utensils, HandHeart, Truck } from 'lucide-react';
-import { Button, Card } from '@/components/ui';
-import { setCurrentUser } from '@/lib/store';
+import { Leaf, ArrowLeft, Utensils, HandHeart, Truck, Shield, UserPlus } from 'lucide-react';
+import { Button, Card, Badge } from '@/components/ui';
 import { seedUsers } from '@/lib/seed-data';
 import type { DemoUser } from '@/lib/types';
+import { useAuth } from '@/lib/auth-context';
+
+// Ensure seed data includes an admin user for demo evaluation
+const demoAdminUser: DemoUser = {
+  id: 'user-admin-demo',
+  name: 'Devika Menon (Coordinator)',
+  email: 'devika.admin@freshloop.org',
+  role: 'admin',
+  organizationId: 'org-1',
+  avatarInitials: 'DM',
+};
 
 const roles = [
   {
@@ -33,29 +43,73 @@ const roles = [
     color: 'bg-amber-50 text-amber-600 border-amber-200',
     users: seedUsers.filter((u) => u.role === 'volunteer'),
   },
+  {
+    role: 'admin' as const,
+    title: 'Platform Administrator',
+    description: 'Platform coordinators overseeing organization verifications and compliance audit logs.',
+    icon: Shield,
+    color: 'bg-purple-50 text-purple-600 border-purple-200',
+    users: [demoAdminUser],
+  },
 ];
 
 export default function DemoPage() {
   const router = useRouter();
+  const { setDemoUser } = useAuth();
 
   const handleSelectUser = (user: DemoUser) => {
-    setCurrentUser(user);
+    setDemoUser({
+      id: user.id,
+      fullName: user.name,
+      email: user.email,
+      role: user.role,
+      organizationId: user.organizationId,
+      avatarInitials: user.avatarInitials,
+      isDemo: true,
+    });
     router.push('/dashboard');
   };
 
   return (
     <div className="min-h-screen bg-bg">
       {/* Demo Banner */}
-      <div className="bg-lime-50 border-b border-lime-200 px-4 py-2 text-center text-xs font-medium text-forest-700">
-        🧪 Demo Mode — Select a role to explore FreshLoop AI. No real authentication required.
+      <div className="bg-lime-50 border-b border-lime-200 px-4 py-2.5 text-center text-xs font-medium text-forest-700 flex items-center justify-center gap-3">
+        <span>🧪 Interactive Demo Sandbox — Explore FreshLoop roles instantly with pre-seeded data.</span>
+        <span className="hidden sm:inline text-lime-400">|</span>
+        <span className="hidden sm:inline text-text-secondary">
+          Prefer real auth?{' '}
+          <Link href="/login" className="font-semibold text-forest-700 underline underline-offset-2">
+            Log In
+          </Link>{' '}
+          or{' '}
+          <Link href="/register" className="font-semibold text-forest-700 underline underline-offset-2">
+            Register
+          </Link>
+        </span>
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
-        {/* Back */}
-        <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-forest-600 transition-colors mb-8">
-          <ArrowLeft className="w-4 h-4" />
-          Back to home
-        </Link>
+        {/* Navigation Bar */}
+        <div className="flex items-center justify-between mb-8">
+          <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-forest-600 transition-colors">
+            <ArrowLeft className="w-4 h-4" />
+            Back to home
+          </Link>
+
+          <div className="flex items-center gap-2">
+            <Link href="/login">
+              <Button size="sm" variant="outline" className="text-xs">
+                Log In
+              </Button>
+            </Link>
+            <Link href="/register">
+              <Button size="sm" variant="primary" className="text-xs">
+                <UserPlus className="w-3.5 h-3.5" />
+                Create Account
+              </Button>
+            </Link>
+          </div>
+        </div>
 
         {/* Header */}
         <div className="flex items-center gap-3 mb-2">
@@ -64,13 +118,12 @@ export default function DemoPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-text">
-              Choose Your Demo Role
+              Choose Your Demo Persona
             </h1>
           </div>
         </div>
         <p className="text-text-secondary mb-10">
-          Select a role and user to experience FreshLoop AI from different perspectives. All data is
-          stored locally in your browser.
+          Select a role to evaluate FreshLoop AI from different operational perspectives. Demo accounts are sandboxed locally and do not alter production database records.
         </p>
 
         {/* Roles */}
@@ -82,7 +135,14 @@ export default function DemoPage() {
                   <role.icon className="w-4.5 h-4.5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-text">{role.title}</h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-semibold text-text">{role.title}</h2>
+                    {role.role === 'admin' && (
+                      <Badge variant="secondary" className="text-[10px]">
+                        Demo Evaluator
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-sm text-text-secondary">{role.description}</p>
                 </div>
               </div>

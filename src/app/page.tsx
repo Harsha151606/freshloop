@@ -46,12 +46,22 @@ export default function LandingPage() {
               Impact
             </a>
           </div>
-          <Link href="/demo">
-            <Button size="md">
-              Try Demo
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/login" className="hidden sm:inline-flex text-sm font-medium text-text-secondary hover:text-forest-600 transition-colors">
+              Log In
+            </Link>
+            <Link href="/demo">
+              <Button size="sm" variant="outline" className="border-forest-200 text-forest-700 bg-forest-50/50 hover:bg-forest-100">
+                Explore Demo
+              </Button>
+            </Link>
+            <Link href="/register">
+              <Button size="sm" variant="primary">
+                Create Account
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Button>
+            </Link>
+          </div>
         </div>
       </nav>
 
@@ -73,18 +83,23 @@ export default function LandingPage() {
               NGOs and community kitchens — intelligently prioritized by urgency and matched by
               feasibility.
             </p>
-            <div className="mt-10 flex flex-col sm:flex-row gap-4">
+            <div className="mt-10 flex flex-col sm:flex-row gap-3.5">
               <Link href="/demo">
                 <Button size="lg" className="w-full sm:w-auto">
-                  Start Rescuing Food
+                  Explore Demo Mode
                   <ArrowRight className="w-5 h-5" />
                 </Button>
               </Link>
-              <a href="#how-it-works">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                  See How It Works
+              <Link href="/register">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto bg-white/80">
+                  Create Real Account
                 </Button>
-              </a>
+              </Link>
+              <Link href="/login">
+                <Button variant="ghost" size="lg" className="w-full sm:w-auto text-text-secondary">
+                  Log In →
+                </Button>
+              </Link>
             </div>
           </div>
 

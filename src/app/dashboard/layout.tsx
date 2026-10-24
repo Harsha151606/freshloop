@@ -16,11 +16,14 @@ import {
   X,
   ChevronRight,
   HandHeart,
+  Shield,
+  Lock,
+  Sparkles,
 } from 'lucide-react';
-import { DemoBanner } from '@/components/ui';
-import { useCurrentUser, useMounted } from '@/lib/hooks';
+import { DemoBanner, Button } from '@/components/ui';
+import { useAuth } from '@/lib/auth-context';
 import { getOrganization } from '@/lib/store';
-import type { Organization } from '@/lib/types';
+import { isAuthorizedForRoute } from '@/lib/auth-validation';
 
 interface NavItem {
   href: string;
@@ -30,33 +33,33 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['donor', 'recipient', 'volunteer'] },
-  { href: '/dashboard/add-food', label: 'Add Food', icon: PlusCircle, roles: ['donor'] },
-  { href: '/dashboard/opportunities', label: 'Opportunities', icon: HandHeart, roles: ['recipient'] },
-  { href: '/dashboard/decision-room', label: 'Decision Room', icon: Zap, roles: ['donor', 'recipient', 'volunteer'] },
-  { href: '/dashboard/volunteer', label: 'Pickup Board', icon: Truck, roles: ['volunteer'] },
-  { href: '/dashboard/impact', label: 'Impact', icon: BarChart3, roles: ['donor', 'recipient', 'volunteer'] },
-  { href: '/dashboard/settings', label: 'Settings', icon: Settings, roles: ['donor', 'recipient', 'volunteer'] },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['donor', 'recipient', 'volunteer', 'admin'] },
+  { href: '/dashboard/add-food', label: 'Add Food', icon: PlusCircle, roles: ['donor', 'admin'] },
+  { href: '/dashboard/opportunities', label: 'Opportunities', icon: HandHeart, roles: ['recipient', 'admin'] },
+  { href: '/dashboard/decision-room', label: 'Decision Room', icon: Zap, roles: ['donor', 'recipient', 'volunteer', 'admin'] },
+  { href: '/dashboard/volunteer', label: 'Pickup Board', icon: Truck, roles: ['volunteer', 'admin'] },
+  { href: '/dashboard/impact', label: 'Impact', icon: BarChart3, roles: ['donor', 'recipient', 'volunteer', 'admin'] },
+  { href: '/dashboard/admin', label: 'Administration', icon: Shield, roles: ['admin'] },
+  { href: '/dashboard/settings', label: 'Settings', icon: Settings, roles: ['donor', 'recipient', 'volunteer', 'admin'] },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, setUser } = useCurrentUser();
+  const { user, isDemo, isLoading, signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const mounted = useMounted();
 
   const org = useMemo(() => {
-    return user ? getOrganization(user.organizationId) : undefined;
+    return user?.organizationId ? getOrganization(user.organizationId) : undefined;
   }, [user]);
 
   useEffect(() => {
-    if (mounted && !user) {
-      router.push('/demo');
+    if (!isLoading && !user) {
+      router.push('/login');
     }
-  }, [mounted, user, router]);
+  }, [isLoading, user, router]);
 
-  if (!mounted || !user) {
+  if (isLoading || !user) {
     return (
       <div className="min-h-screen bg-bg flex items-center justify-center">
         <div className="h-8 w-8 border-2 border-forest-200 border-t-forest-600 rounded-full animate-spin" />
@@ -64,16 +67,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
+  // Check role authorization for the current path
+  const isAuthorized = isAuthorizedForRoute(user.role, pathname);
+
   const filteredNav = navItems.filter((item) => item.roles.includes(user.role));
 
-  const handleLogout = () => {
-    setUser(null);
-    router.push('/demo');
+  const handleLogout = async () => {
+    await signOut();
   };
 
   return (
     <div className="min-h-screen bg-bg">
-      <DemoBanner />
+      {isDemo && <DemoBanner />}
 
       {/* Mobile header */}
       <div className="lg:hidden sticky top-0 z-30 bg-white border-b border-border-subtle px-4 h-14 flex items-center justify-between">
@@ -99,11 +104,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
-        <div className="lg:hidden fixed inset-0 z-40">
-          <div className="fixed inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
-          <div className="fixed inset-y-0 left-0 w-72 bg-white shadow-lg animate-slide-in">
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <div
+            className="fixed inset-0 bg-black/30 backdrop-blur-xs transition-opacity"
+            onClick={() => setSidebarOpen(false)}
+          />
+          <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-xl z-50 flex flex-col">
             <SidebarContent
               user={user}
+              isDemo={isDemo}
               org={org}
               filteredNav={filteredNav}
               pathname={pathname}
@@ -114,11 +123,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       )}
 
+      {/* Desktop layout */}
       <div className="flex">
         {/* Desktop sidebar */}
-        <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 lg:top-[32px] bg-white border-r border-border-subtle">
+        <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-white border-r border-border-subtle z-20">
           <SidebarContent
             user={user}
+            isDemo={isDemo}
             org={org}
             filteredNav={filteredNav}
             pathname={pathname}
@@ -127,9 +138,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 lg:ml-64 min-h-[calc(100vh-32px)]">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-            {children}
+        <main className="flex-1 lg:pl-64 min-h-[calc(100vh-3.5rem)]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            {!isAuthorized ? (
+              <div className="max-w-lg mx-auto py-16 text-center">
+                <div className="w-14 h-14 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4 text-amber-600 border border-amber-200">
+                  <Lock className="w-6 h-6" />
+                </div>
+                <h2 className="text-xl font-bold text-text mb-2">Access Restricted</h2>
+                <p className="text-sm text-text-secondary mb-6">
+                  Your current account role (<strong className="capitalize">{user.role}</strong>) does not have permission to access this section.
+                </p>
+                <div className="flex gap-3 justify-center">
+                  <Link href="/dashboard">
+                    <Button variant="primary">Go to Dashboard</Button>
+                  </Link>
+                  {isDemo && (
+                    <Link href="/demo">
+                      <Button variant="outline">Change Demo Role</Button>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            ) : (
+              children
+            )}
           </div>
         </main>
       </div>
@@ -139,14 +172,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 function SidebarContent({
   user,
+  isDemo,
   org,
   filteredNav,
   pathname,
   onLogout,
   onClose,
 }: {
-  user: NonNullable<ReturnType<typeof useCurrentUser>['user']>;
-  org?: Organization;
+  user: { fullName: string; email: string; role: string; avatarInitials: string; organizationName?: string | null };
+  isDemo: boolean;
+  org?: { name: string };
   filteredNav: NavItem[];
   pathname: string;
   onLogout: () => void;
@@ -179,14 +214,25 @@ function SidebarContent({
             {user.avatarInitials}
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-text truncate">{user.name}</p>
-            <p className="text-xs text-text-muted truncate">{org?.name || user.email}</p>
+            <p className="text-sm font-semibold text-text truncate">{user.fullName}</p>
+            <p className="text-xs text-text-muted truncate">
+              {org?.name || user.organizationName || user.email}
+            </p>
           </div>
         </div>
-        <div className="mt-2">
+        <div className="mt-2.5 flex items-center gap-2">
           <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-forest-50 text-forest-700 border border-forest-200 capitalize">
             {user.role}
           </span>
+          {isDemo ? (
+            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+              Demo Mode
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-forest-700 bg-forest-50 px-2 py-0.5 rounded-full border border-forest-200">
+              ● Live Account
+            </span>
+          )}
         </div>
       </div>
 
@@ -213,14 +259,24 @@ function SidebarContent({
         })}
       </nav>
 
-      {/* Logout */}
-      <div className="px-3 py-4 border-t border-border-subtle shrink-0">
+      {/* Demo switch / Account Actions */}
+      <div className="px-3 py-3 border-t border-border-subtle shrink-0 space-y-1">
+        {isDemo ? (
+          <Link
+            href="/demo"
+            className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-forest-600 hover:bg-forest-50 rounded-[var(--radius-md)] transition-colors"
+          >
+            <Sparkles className="w-4 h-4" />
+            Switch Demo Role
+          </Link>
+        ) : null}
+
         <button
           onClick={onLogout}
           className="flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-md)] text-sm font-medium text-text-secondary hover:bg-red-50 hover:text-red-600 transition-colors w-full cursor-pointer"
         >
           <LogOut className="w-4.5 h-4.5" />
-          Exit Demo
+          {isDemo ? 'Exit Demo' : 'Sign Out'}
         </button>
       </div>
     </div>
