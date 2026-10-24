@@ -92,10 +92,6 @@ export default function DecisionRoomPage() {
           });
         }
       })
-      .finally(() => {
-        // The result state drives the loading indicator without a synchronous state
-        // update at effect start, avoiding an unnecessary render cascade.
-      });
 
     return () => {
       cancelled = true;
