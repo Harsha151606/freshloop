@@ -1,0 +1,189 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────
+   FreshLoop AI — Design System
+   Warm ivory backgrounds, deep forest-green primary,
+   restrained lime accents, elegant typography.
+   ───────────────────────────────────────────── */
+
+@theme {
+  /* ── Brand Colors ── */
+  --color-ivory-50: #fefdfb;
+  --color-ivory-100: #fdf9f0;
+  --color-ivory-200: #faf3e2;
+  --color-ivory-300: #f5ead0;
+
+  --color-forest-50: #f0f7f1;
+  --color-forest-100: #d4ead7;
+  --color-forest-200: #a8d5af;
+  --color-forest-300: #6bb87a;
+  --color-forest-400: #3d9a4f;
+  --color-forest-500: #1b7a35;
+  --color-forest-600: #166429;
+  --color-forest-700: #114e20;
+  --color-forest-800: #0d3a18;
+  --color-forest-900: #0a2b12;
+
+  --color-lime-50: #f7fce9;
+  --color-lime-100: #edf8c8;
+  --color-lime-200: #d9f095;
+  --color-lime-300: #c0e45c;
+  --color-lime-400: #a8d630;
+  --color-lime-500: #8bc01a;
+
+  --color-urgent-red: #dc2626;
+  --color-urgent-orange: #ea580c;
+  --color-urgent-yellow: #ca8a04;
+
+  /* ── Semantic Tokens ── */
+  --color-primary: var(--color-forest-600);
+  --color-primary-hover: var(--color-forest-700);
+  --color-primary-light: var(--color-forest-50);
+  --color-accent: var(--color-lime-400);
+  --color-accent-soft: var(--color-lime-100);
+  --color-bg: var(--color-ivory-50);
+  --color-bg-subtle: var(--color-ivory-100);
+  --color-bg-muted: var(--color-ivory-200);
+  --color-surface: #ffffff;
+  --color-surface-elevated: #ffffff;
+  --color-border: #e5e2db;
+  --color-border-subtle: #f0ede6;
+  --color-text: #1a1a18;
+  --color-text-secondary: #5c5c57;
+  --color-text-muted: #8c8c85;
+
+  /* ── Typography ── */
+  --font-sans: 'Inter', 'system-ui', '-apple-system', 'Segoe UI', sans-serif;
+
+  /* ── Shadows ── */
+  --shadow-xs: 0 1px 2px rgba(10, 43, 18, 0.04);
+  --shadow-sm: 0 1px 3px rgba(10, 43, 18, 0.06), 0 1px 2px rgba(10, 43, 18, 0.04);
+  --shadow-md: 0 4px 6px rgba(10, 43, 18, 0.05), 0 2px 4px rgba(10, 43, 18, 0.04);
+  --shadow-lg: 0 10px 15px rgba(10, 43, 18, 0.06), 0 4px 6px rgba(10, 43, 18, 0.04);
+
+  /* ── Radii ── */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+}
+
+
+/* ── Base Styles ── */
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* ── Focus ring ── */
+*:focus-visible {
+  outline: 2px solid var(--color-forest-400);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Scrollbar styling ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* ── Utility classes ── */
+.text-balance {
+  text-wrap: balance;
+}
+
+.urgency-critical {
+  color: var(--color-urgent-red);
+}
+
+.urgency-high {
+  color: var(--color-urgent-orange);
+}
+
+.urgency-medium {
+  color: var(--color-urgent-yellow);
+}
+
+.urgency-low {
+  color: var(--color-forest-500);
+}
+
+.bg-urgency-critical {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+}
+
+.bg-urgency-high {
+  background-color: #fff7ed;
+  border-color: #fed7aa;
+}
+
+.bg-urgency-medium {
+  background-color: #fefce8;
+  border-color: #fef08a;
+}
+
+.bg-urgency-low {
+  background-color: var(--color-forest-50);
+  border-color: var(--color-forest-200);
+}
+
+/* ── Animations ── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+.animate-slide-in {
+  animation: slideInRight 0.3s ease-out;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+/* ── Recharts overrides ── */
+.recharts-cartesian-axis-tick-value {
+  font-size: 12px;
+  fill: var(--color-text-secondary);
+}
+
+.recharts-tooltip-wrapper {
+  outline: none;
+}
