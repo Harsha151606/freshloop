@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test tests/**/*.test.ts"
+    "test": "tsx --test tests/ai.test.ts tests/auth.test.ts tests/impact.test.ts tests/matching.test.ts tests/quantities.test.ts tests/transitions.test.ts tests/urgency.test.ts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.3.1",
