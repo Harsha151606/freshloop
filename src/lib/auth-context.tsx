@@ -7,7 +7,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
-import { getCurrentUser, setCurrentUser as storeSetCurrentUser } from '@/lib/store';
+import { ensureAccountOrganization, getCurrentUser, setCurrentUser as storeSetCurrentUser } from '@/lib/store';
 import type { UserRole } from './types';
 
 export interface AuthUser {
@@ -45,43 +45,72 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
 
-  const loadProfile = useCallback(async (userId: string, email: string, meta: Record<string, unknown> = {}) => {
+  const loadProfile = useCallback(async (
+    userId: string,
+    email: string,
+    meta: Record<string, unknown> = {}
+  ): Promise<AuthUser> => {
+    let profile: Record<string, unknown> | null = null;
+
     try {
-      const { data: profile } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
-      if (profile) {
-        return {
-          id: profile.id,
-          email: profile.email || email,
-          fullName: profile.full_name || email.split('@')[0],
-          role: profile.role as UserRole,
-          organizationId: profile.organization_id,
-          organizationName: profile.organization_name,
-          avatarInitials: profile.avatar_initials || 'FL',
-          isDemo: false,
-        };
-      }
+      if (!error && data) profile = data as Record<string, unknown>;
     } catch {
-      // Fallback to auth metadata
+      // A profile table/row may not exist yet; auth metadata remains the fallback.
     }
 
-    const metaRole = (['donor', 'recipient', 'volunteer'].includes(meta.role as string)
-      ? meta.role
-      : 'donor') as UserRole;
+    const allowedRoles: UserRole[] = ['donor', 'recipient', 'volunteer', 'admin'];
+    const rawRole = profile?.role ?? meta.role;
+    const role: UserRole = allowedRoles.includes(rawRole as UserRole)
+      ? (rawRole as UserRole)
+      : 'donor';
 
-    const fullName = (meta.full_name as string) || email.split('@')[0] || 'User';
+    const fullName =
+      (typeof profile?.full_name === 'string' && profile.full_name.trim()) ||
+      (typeof meta.full_name === 'string' && meta.full_name.trim()) ||
+      email.split('@')[0] ||
+      'User';
+
+    const organizationName =
+      (typeof profile?.organization_name === 'string' && profile.organization_name.trim()) ||
+      (typeof meta.organization_name === 'string' && meta.organization_name.trim()) ||
+      null;
+
+    const organizationId =
+      typeof profile?.organization_id === 'string' ? profile.organization_id : null;
+
+    // Real accounts need an organization id for listing ownership. Until the
+    // database organization/profile tables are wired up, create a stable local
+    // organization record instead of leaving the account with a null owner.
+    const resolvedOrganizationId =
+      role === 'donor' || role === 'recipient'
+        ? ensureAccountOrganization({ userId, organizationId, organizationName, role })
+        : organizationId;
+
+    const avatarInitials =
+      (typeof profile?.avatar_initials === 'string' && profile.avatar_initials) ||
+      fullName
+        .split(/\\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0])
+        .join('')
+        .toUpperCase() ||
+      'FL';
+
     return {
       id: userId,
-      email,
+      email: (typeof profile?.email === 'string' && profile.email) || email,
       fullName,
-      role: metaRole,
-      organizationId: null,
-      organizationName: (meta.organization_name as string) || null,
-      avatarInitials: fullName.slice(0, 2).toUpperCase(),
+      role,
+      organizationId: resolvedOrganizationId,
+      organizationName,
+      avatarInitials,
       isDemo: false,
     };
   }, [supabase]);
