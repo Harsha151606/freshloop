@@ -47,6 +47,28 @@ export default function DecisionRoomPage() {
 
   const recipientOrgs = useMemo(() => getRecipientOrgs(), []);
 
+  const decisionItems: DecisionRoomItem[] = useMemo(() => {
+    const activeListings = allListings.filter(
+      (l) => l.status === 'posted' || l.status === 'partially_claimed'
+    );
+
+    const ranked = rankListingsByUrgency(activeListings);
+
+    return ranked
+      .filter((item) => item.urgency.isEligible)
+      .slice(0, 10)
+      .map(({ listing, urgency }) => {
+        const matches = matchRecipients(listing, recipientOrgs);
+        const topMatch = matches.length > 0 ? matches[0] : null;
+        const currentRescue = rescues.find(
+          (r) => r.listingId === listing.id && r.status !== 'cancelled' && r.status !== 'delivered'
+        ) || null;
+        const donorOrg = getOrganization(listing.organizationId);
+
+        return { listing, urgency, topMatch, currentRescue, donorOrg };
+      });
+  }, [allListings, rescues, recipientOrgs]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -92,27 +114,6 @@ export default function DecisionRoomPage() {
     };
   }, [decisionItems]);
 
-  const decisionItems: DecisionRoomItem[] = useMemo(() => {
-    const activeListings = allListings.filter(
-      (l) => l.status === 'posted' || l.status === 'partially_claimed'
-    );
-
-    const ranked = rankListingsByUrgency(activeListings);
-
-    return ranked
-      .filter((item) => item.urgency.isEligible)
-      .slice(0, 10)
-      .map(({ listing, urgency }) => {
-        const matches = matchRecipients(listing, recipientOrgs);
-        const topMatch = matches.length > 0 ? matches[0] : null;
-        const currentRescue = rescues.find(
-          (r) => r.listingId === listing.id && r.status !== 'cancelled' && r.status !== 'delivered'
-        ) || null;
-        const donorOrg = getOrganization(listing.organizationId);
-
-        return { listing, urgency, topMatch, currentRescue, donorOrg };
-      });
-  }, [allListings, rescues, recipientOrgs]);
 
   if (!mounted || !user) return null;
 
