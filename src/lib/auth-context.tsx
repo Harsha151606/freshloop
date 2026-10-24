@@ -95,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const avatarInitials =
       (typeof profile?.avatar_initials === 'string' && profile.avatar_initials) ||
       fullName
-        .split(/\\s+/)
+        .split(/\s+/)
         .filter(Boolean)
         .slice(0, 2)
         .map((part) => part[0])
