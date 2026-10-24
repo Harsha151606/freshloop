@@ -36,6 +36,7 @@ export default function RegisterPage() {
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
+  const [emailDeliveryBlocked, setEmailDeliveryBlocked] = useState(false);
   const [loading, setLoading] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
 
@@ -48,6 +49,7 @@ export default function RegisterPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setGeneralError(null);
+    setEmailDeliveryBlocked(false);
 
     // Front-end validation
     const validation = validateRegistration({
@@ -85,10 +87,23 @@ export default function RegisterPage() {
       });
 
       if (error) {
-        if (error.message.includes('already registered')) {
+        const message = error.message.toLowerCase();
+        if (message.includes('already registered') || message.includes('already been registered')) {
           setGeneralError('This email address is already registered. Please log in instead.');
+        } else if (
+          message.includes('email') &&
+          (message.includes('send') ||
+            message.includes('sending') ||
+            message.includes('confirmation') ||
+            message.includes('rate limit') ||
+            message.includes('not verified'))
+        ) {
+          setEmailDeliveryBlocked(true);
+          setGeneralError(
+            'We could not send the verification email. Email delivery is temporarily unavailable because the sender is not fully configured. Your account has not been confirmed; use Demo Mode to explore FreshLoop while this is fixed.'
+          );
         } else {
-          setGeneralError(error.message);
+          setGeneralError('We could not create your account. Please check your details and try again.');
         }
         setLoading(false);
         return;
@@ -167,7 +182,17 @@ export default function RegisterPage() {
           {generalError && (
             <div className="mb-6 flex items-start gap-3 p-3.5 bg-red-50 border border-red-200 rounded-[var(--radius-md)] text-sm text-red-700">
               <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-              <div>{generalError}</div>
+              <div>
+                <p>{generalError}</p>
+                {emailDeliveryBlocked && (
+                  <Link
+                    href="/demo"
+                    className="mt-2 inline-flex font-semibold underline underline-offset-2 text-red-800"
+                  >
+                    Open Demo Mode
+                  </Link>
+                )}
+              </div>
             </div>
           )}
 

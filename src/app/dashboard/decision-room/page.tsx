@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   Zap,
@@ -34,13 +34,15 @@ import {
   storageLabel,
   statusLabel,
 } from '@/lib/utils';
-import type { DecisionRoomItem } from '@/lib/types';
+import type { AIPriorityExplanation, DecisionRoomItem } from '@/lib/types';
+import { generatePriorityExplanation } from '@/lib/ai-service';
 
 export default function DecisionRoomPage() {
   const { user } = useCurrentUser();
   const allListings = useFoodListings();
   const rescues = useRescueRequests();
   const mounted = useMounted();
+  const [priorityExplanation, setPriorityExplanation] = useState<AIPriorityExplanation | null>(null);
 
   const recipientOrgs = useMemo(() => getRecipientOrgs(), []);
 
@@ -65,6 +67,37 @@ export default function DecisionRoomPage() {
         return { listing, urgency, topMatch, currentRescue, donorOrg };
       });
   }, [allListings, rescues, recipientOrgs]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    generatePriorityExplanation(
+      decisionItems.map(({ listing, urgency }) => ({
+        foodName: listing.foodName,
+        urgencyScore: urgency.score,
+        reasons: urgency.reasons,
+        timeRemaining: urgency.timeRemainingMinutes,
+      }))
+    )
+      .then((result) => {
+        if (!cancelled) setPriorityExplanation(result);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPriorityExplanation({
+            summary: 'Rescue priorities are available using deterministic rules.',
+            details: 'AI explanations are temporarily unavailable. Urgency rankings and recipient matching continue to use deterministic rules.',
+            generatedAt: new Date().toISOString(),
+            isAIGenerated: false,
+          });
+        }
+      })
+
+    return () => {
+      cancelled = true;
+    };
+  }, [decisionItems]);
+
 
   if (!mounted || !user) return null;
 
@@ -112,23 +145,34 @@ export default function DecisionRoomPage() {
         />
       </div>
 
-      {/* AI explanation placeholder */}
+      {/* AI-assisted decision support; eligibility and urgency stay deterministic */}
       <Card className="border-forest-200 bg-forest-50/30">
         <CardContent className="p-4">
           <div className="flex gap-3">
             <Sparkles className="w-5 h-5 text-forest-600 shrink-0 mt-0.5" />
-            <div>
+            <div className="min-w-0">
               <p className="text-sm font-medium text-forest-700 mb-1">
-                Priority Analysis (Deterministic — AI not configured)
+                {!priorityExplanation
+                  ? 'Priority Analysis · Generating'
+                  : priorityExplanation?.isAIGenerated
+                    ? 'Priority Analysis · AI-generated'
+                    : 'Priority Analysis · Rule-based'}
               </p>
-              <p className="text-xs text-forest-600">
-                {decisionItems.length > 0
-                  ? `${decisionItems.length} eligible listings ranked by urgency. ${criticalCount > 0 ? `${criticalCount} critical item(s) need immediate rescue — ` : ''}Rankings are based on time to expiry, quantity, perishability, and storage requirements. ${matchedCount > 0 ? `${matchedCount} listing(s) have strong recipient matches (≥60% compatibility).` : 'Consider broadening recipient network for better matching.'}`
-                  : 'No eligible listings to analyze at this time.'}
+              <p className="text-xs text-forest-700 font-medium">
+                {!priorityExplanation
+                  ? 'Preparing a concise rescue briefing…'
+                  : priorityExplanation?.summary ?? 'Rescue priorities are ranked using deterministic rules.'}
               </p>
+              {priorityExplanation?.details && (
+                <p className="text-xs text-forest-600 mt-2 whitespace-pre-line">
+                  {priorityExplanation.details}
+                </p>
+              )}
               <p className="text-[10px] text-forest-500 mt-2 flex items-center gap-1">
                 <Info className="w-3 h-3" />
-                Configure GEMINI_API_KEY to enable AI-powered explanations.
+                {priorityExplanation?.isAIGenerated
+                  ? 'AI text is advisory. Eligibility, urgency and food-safety constraints stay rule-based.'
+                  : 'AI is unavailable right now; deterministic ranking and matching remain active.'}
               </p>
             </div>
           </div>
