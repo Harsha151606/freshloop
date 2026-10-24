@@ -43,7 +43,6 @@ export default function DecisionRoomPage() {
   const rescues = useRescueRequests();
   const mounted = useMounted();
   const [priorityExplanation, setPriorityExplanation] = useState<AIPriorityExplanation | null>(null);
-  const [priorityLoading, setPriorityLoading] = useState(false);
 
   const recipientOrgs = useMemo(() => getRecipientOrgs(), []);
 
@@ -72,18 +71,6 @@ export default function DecisionRoomPage() {
   useEffect(() => {
     let cancelled = false;
 
-    if (decisionItems.length === 0) {
-      setPriorityExplanation({
-        summary: 'No active listings to prioritize.',
-        details: 'New rescue opportunities will be analyzed when eligible food listings are available.',
-        generatedAt: new Date().toISOString(),
-        isAIGenerated: false,
-      });
-      setPriorityLoading(false);
-      return;
-    }
-
-    setPriorityLoading(true);
     generatePriorityExplanation(
       decisionItems.map(({ listing, urgency }) => ({
         foodName: listing.foodName,
@@ -106,7 +93,8 @@ export default function DecisionRoomPage() {
         }
       })
       .finally(() => {
-        if (!cancelled) setPriorityLoading(false);
+        // The result state drives the loading indicator without a synchronous state
+        // update at effect start, avoiding an unnecessary render cascade.
       });
 
     return () => {
@@ -168,14 +156,14 @@ export default function DecisionRoomPage() {
             <Sparkles className="w-5 h-5 text-forest-600 shrink-0 mt-0.5" />
             <div className="min-w-0">
               <p className="text-sm font-medium text-forest-700 mb-1">
-                {priorityLoading
+                {!priorityExplanation
                   ? 'Priority Analysis · Generating'
                   : priorityExplanation?.isAIGenerated
                     ? 'Priority Analysis · AI-generated'
                     : 'Priority Analysis · Rule-based'}
               </p>
               <p className="text-xs text-forest-700 font-medium">
-                {priorityLoading
+                {!priorityExplanation
                   ? 'Preparing a concise rescue briefing…'
                   : priorityExplanation?.summary ?? 'Rescue priorities are ranked using deterministic rules.'}
               </p>
