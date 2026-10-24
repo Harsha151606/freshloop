@@ -135,7 +135,8 @@ export default function SettingsPage() {
       </Card>
 
       {isDemo && (
-      {/* Demo Reset */}
+        <>
+          {/* Demo Reset */}
       <Card className="border-red-200">
         <CardHeader>
           <div className="flex items-center gap-2">
@@ -192,6 +193,7 @@ export default function SettingsPage() {
           </div>
         )}
       </Dialog>
+        </>
       )}
     </div>
   );
