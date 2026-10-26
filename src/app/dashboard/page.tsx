@@ -66,7 +66,6 @@ export default function DashboardPage() {
   const isDonor = user.role === 'donor';
   const isRecipient = user.role === 'recipient';
   const isVolunteer = user.role === 'volunteer';
-  const isAdmin = user.role === 'admin';
 
   const ownListings = allListings.filter((listing) => listing.donorId === user.id);
   const activeNetworkListings = allListings.filter(
@@ -131,7 +130,7 @@ export default function DashboardPage() {
             { label: 'Active Listings', value: activeNetworkListings.length, note: 'Open food opportunities', icon: Package, tone: 'green' },
             { label: 'Food Rescued', value: rescuedKg.toLocaleString() + ' kg', note: 'Completed handoffs', icon: HandHeart, tone: 'amber' },
             { label: 'Meals Supported', value: mealsSupported.toLocaleString(), note: 'Estimated servings', icon: Users, tone: 'blue' },
-            { label: 'NGO Partners', value: organizations.filter((item) => ['ngo', 'community_kitchen', 'food_bank'].includes(item.type)).length, note: 'Recipient organizations', icon: Users, tone: 'rose' },
+            { label: 'NGO Partners', value: organizations.filter((item) => ['ngo', 'community_kitchen', 'food_bank'].some((type) => type === item.type)).length, note: 'Recipient organizations', icon: Users, tone: 'rose' },
           ];
 
   const roleLabel = isDonor ? 'Food Donor' : isRecipient ? 'Recipient Organization' : isVolunteer ? 'Rescue Volunteer' : 'Platform Overview';
