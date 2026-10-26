@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { Leaf, ArrowLeft, Utensils, HandHeart, Truck, Shield, UserPlus } from 'lucide-react';
 import { Button, Card, Badge } from '@/components/ui';
@@ -56,6 +57,33 @@ const roles = [
 export default function DemoPage() {
   const router = useRouter();
   const { setDemoUser } = useAuth();
+
+  // Deep link used for quick walkthroughs and screenshots: /demo?persona=donor.
+  // It selects a seeded demo identity only; it never signs in to a real account.
+  useEffect(() => {
+    const persona = new URLSearchParams(window.location.search).get('persona');
+    if (!persona) return;
+
+    const user = persona === 'donor'
+      ? seedUsers.find((candidate) => candidate.id === 'user-donor-3')
+      : persona === 'recipient'
+        ? seedUsers.find((candidate) => candidate.id === 'user-recipient-1')
+        : persona === 'volunteer'
+          ? seedUsers.find((candidate) => candidate.id === 'user-volunteer-1')
+          : null;
+
+    if (!user) return;
+    setDemoUser({
+      id: user.id,
+      fullName: user.name,
+      email: user.email,
+      role: user.role,
+      organizationId: user.organizationId,
+      avatarInitials: user.avatarInitials,
+      isDemo: true,
+    });
+    router.replace('/dashboard');
+  }, [router, setDemoUser]);
 
   const handleSelectUser = (user: DemoUser) => {
     setDemoUser({
