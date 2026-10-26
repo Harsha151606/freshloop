@@ -109,7 +109,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             className="fixed inset-0 bg-black/30 backdrop-blur-xs transition-opacity"
             onClick={() => setSidebarOpen(false)}
           />
-          <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-xl z-50 flex flex-col">
+          <div className="fixed inset-y-0 left-0 w-64 bg-[#f5f7f6] shadow-xl z-50 flex flex-col">
             <SidebarContent
               user={user}
               isDemo={isDemo}
@@ -126,7 +126,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Desktop layout */}
       <div className="flex">
         {/* Desktop sidebar */}
-        <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-white border-r border-border-subtle z-20">
+        <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-[#f5f7f6] border-r border-border-subtle z-20">
           <SidebarContent
             user={user}
             isDemo={isDemo}
@@ -247,8 +247,8 @@ function SidebarContent({
               onClick={onClose}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-md)] text-sm font-medium transition-colors ${
                 isActive
-                  ? 'bg-forest-50 text-forest-700'
-                  : 'text-text-secondary hover:bg-ivory-100 hover:text-text'
+                  ? 'bg-forest-600 text-white shadow-sm'
+                  : 'text-slate-600 hover:bg-white hover:text-forest-700'
               }`}
             >
               <item.icon className="w-4.5 h-4.5 shrink-0" />
